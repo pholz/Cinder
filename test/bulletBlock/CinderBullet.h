@@ -12,6 +12,7 @@
 #include "cinder/app/AppBasic.h"
 #include "cinder/TriMesh.h"
 #include "cinder/AxisAlignedBox.h"
+#include "cinder/Sphere.h"
 
 const float PI = 3.14159265;
 
@@ -143,8 +144,8 @@ namespace cinder {
 	
 		btRigidBody* create(btDynamicsWorld *world, AxisAlignedBox3f box, Quatf rotation, Vec3f position)
 	{
-		Vec3f min = box.min();
-		Vec3f max = box.max();
+		Vec3f min = box.getMin();
+		Vec3f max = box.getMax();
 		
 	//	Vec3d position = Vec3f( (min.x + max.x)/2.0f, (min.y + max.y) / 2.0f, (min.z + max.z) / 2.0f );
 		Vec3f size = Vec3f( abs(max.x - min.x), abs(max.y - min.y), abs(max.z - min.z) );
