@@ -31,6 +31,8 @@
 	#include <termios.h>
 #elif defined( CINDER_MSW )
 	#include <windows.h>
+	#undef min
+	#undef max
 #endif
 
 namespace cinder {
@@ -105,7 +107,7 @@ class Serial {
 #endif	
 	};
 	
-	shared_ptr<Obj>		mObj;
+	std::shared_ptr<Obj>		mObj;
 	
   private:
 

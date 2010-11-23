@@ -47,7 +47,11 @@ class ObjLoader {
 	/**Constructs and does the parsing of the file
 	 * \param includeUVs  if false UV coordinates will be skipped, which can provide a faster load time
 	**/
-	 ObjLoader( shared_ptr<IStream> aStream, bool includeUVs = true );
+	ObjLoader( std::shared_ptr<IStream> aStream, bool includeUVs = true );
+	/**Constructs and does the parsing of the file
+	 * \param includeUVs if false UV coordinates will be skipped, which can provide a faster load time
+	**/
+	ObjLoader( DataSourceRef dataSource, bool includeUVs = true );
 	~ObjLoader();
 
 	/**Loads all the groups present in the file into a single TriMesh
@@ -76,10 +80,15 @@ class ObjLoader {
 		bool					mHasTexCoords;
 		bool					mHasNormals;
 	};
+
+	//! Writes a new OBJ file to \a dataTarget. \warning - this method will be moved in the future
+	static void		write( DataTargetRef dataTarget, const TriMesh &mesh, bool writeNormals = true, bool writeUVs = true );
 	
  private:
 	typedef boost::tuple<int,int> VertexPair;
 	typedef boost::tuple<int,int,int> VertexTriple;
+
+	void	parse( bool includeUVs );
 
  	void	parseFace( Group *group, const std::string &s, bool includeUVs );
 	void	loadInternalNoOptimize( const Group &group, TriMesh *destTriMesh, bool texCoords, bool normals );
@@ -88,10 +97,10 @@ class ObjLoader {
 	void	loadInternalTextures( const Group &group, std::map<boost::tuple<int,int>,int> &uniqueVerts, TriMesh *destTriMesh );
 	void	loadInternal( const Group &group, std::map<int,int> &uniqueVerts, TriMesh *destTriMesh );	
  
-	shared_ptr<IStream>		mStream;
-	std::vector<Vec3f>		mVertices, mNormals;
-	std::vector<Vec2f>		mTexCoords;
-	std::vector<Group>		mGroups;
+	std::shared_ptr<IStream>	mStream;
+	std::vector<Vec3f>			mVertices, mNormals;
+	std::vector<Vec2f>			mTexCoords;
+	std::vector<Group>			mGroups;
 };
 
 } // namespace cinder

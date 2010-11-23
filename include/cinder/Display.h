@@ -33,7 +33,9 @@
 		class NSScreen;
 #	endif
 #elif defined( CINDER_MSW )
-#	include <windows.h>
+	#include <windows.h>
+	#undef min
+	#undef max
 #endif
 
 #include <map>
@@ -54,11 +56,11 @@ class Display {
 	CGDirectDisplayID	getCGDirectDisplayID() const { return mDirectDisplayID; }
 #endif
 
-	static shared_ptr<Display>							getMainDisplay();
-	static const std::vector<shared_ptr<Display> >&		getDisplays();
+	static std::shared_ptr<Display>							getMainDisplay();
+	static const std::vector<std::shared_ptr<Display> >&	getDisplays();
 	
 #if defined( CINDER_MAC )
-	static shared_ptr<Display>							findFromCGDirectDisplayID( CGDirectDisplayID displayID );
+	static std::shared_ptr<Display>							findFromCGDirectDisplayID( CGDirectDisplayID displayID );
 #elif defined( CINDER_MSW )
 	static BOOL CALLBACK enumMonitorProc( HMONITOR hMonitor, HDC hdc, LPRECT rect, LPARAM lParam );
 #endif
@@ -75,7 +77,7 @@ class Display {
 	
 	static void		enumerateDisplays();
 	
-	static std::vector<shared_ptr<Display> >		sDisplays;
+	static std::vector<std::shared_ptr<Display> >	sDisplays;
 	static bool										sDisplaysInitialized;
 };
 

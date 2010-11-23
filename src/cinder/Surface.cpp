@@ -32,7 +32,7 @@ namespace cinder {
 template<typename T>
 class ImageTargetSurface : public ImageTarget {
   public:
-	static shared_ptr<ImageTargetSurface<T> > createRef( SurfaceT<T> *surface ) { return shared_ptr<ImageTargetSurface<T> >( new ImageTargetSurface<T>( surface ) ); }
+	static std::shared_ptr<ImageTargetSurface<T> > createRef( SurfaceT<T> *surface ) { return std::shared_ptr<ImageTargetSurface<T> >( new ImageTargetSurface<T>( surface ) ); }
 
 	virtual bool hasAlpha() const;
 	
@@ -54,10 +54,14 @@ class ImageSourceSurface : public ImageSource {
 		mHeight = surface.getHeight();
 		setColorModel( ImageIo::CM_RGB );
 		setChannelOrder( ImageIo::ChannelOrder( surface.getChannelOrder().getImageIoChannelOrder() ) );
-		if( boost::is_same<T,uint8_t>::value )
+		if( boost::is_same<T,uint8_t>::value ) {
 			setDataType( ImageIo::UINT8 );
-		else if( boost::is_same<T,float>::value )
+			mSurface8u = *reinterpret_cast<const Surface8u*>( &surface ); // register reference to 'surface'
+		}
+		else if( boost::is_same<T,float>::value ) {
 			setDataType( ImageIo::FLOAT32 );
+			mSurface32f = *reinterpret_cast<const Surface32f*>( &surface ); // register reference to 'surface'
+		}
 		else
 			throw; // this surface seems to be a type we've never met
 		mRowBytes = surface.getRowBytes();
@@ -75,6 +79,9 @@ class ImageSourceSurface : public ImageSource {
 		}
 	}
 	
+	// not ideal, but these are used to register a reference to the surface we were constructed with
+	Surface8u			mSurface8u;
+	Surface32f			mSurface32f;
 	const uint8_t		*mData;
 	int32_t				mRowBytes;
 };
@@ -229,7 +236,7 @@ SurfaceT<T>::SurfaceT( int32_t aWidth, int32_t aHeight, bool alpha, SurfaceChann
 		channelOrder = ( alpha ) ? SurfaceChannelOrder::RGBA : SurfaceChannelOrder::RGB;
 	int32_t rowBytes = aWidth * sizeof(T) * channelOrder.getPixelInc();
 	T *data = new T[aHeight * rowBytes];
-	mObj = shared_ptr<Obj>( new Obj( aWidth, aHeight, channelOrder, data, true, rowBytes ) );
+	mObj = std::shared_ptr<Obj>( new Obj( aWidth, aHeight, channelOrder, data, true, rowBytes ) );
 }
 
 template<typename T>
@@ -238,13 +245,13 @@ SurfaceT<T>::SurfaceT( int32_t aWidth, int32_t aHeight, bool alpha, const Surfac
 	SurfaceChannelOrder channelOrder = constraints.getChannelOrder( alpha );
 	int32_t rowBytes = constraints.getRowBytes( aWidth, channelOrder, sizeof(T) );
 	T *data = new T[aHeight * rowBytes];
-	mObj = shared_ptr<Obj>( new Obj( aWidth, aHeight, channelOrder, data, true, rowBytes ) );
+	mObj = std::shared_ptr<Obj>( new Obj( aWidth, aHeight, channelOrder, data, true, rowBytes ) );
 }
 
 template<typename T>
 SurfaceT<T>::SurfaceT( T *aData, int32_t aWidth, int32_t aHeight, int32_t aRowBytes, SurfaceChannelOrder aChannelOrder )
 {
-	mObj = shared_ptr<Obj>( new Obj( aWidth, aHeight, aChannelOrder, aData, false, aRowBytes ) );
+	mObj = std::shared_ptr<Obj>( new Obj( aWidth, aHeight, aChannelOrder, aData, false, aRowBytes ) );
 }
 
 template<typename T>
@@ -256,7 +263,7 @@ SurfaceT<T>::SurfaceT( ImageSourceRef imageSource, const SurfaceConstraints &con
 template<typename T>
 SurfaceT<T>::operator ImageSourceRef() const
 {
-	return shared_ptr<ImageSource>( new ImageSourceSurface( *this ) );
+	return std::shared_ptr<ImageSource>( new ImageSourceSurface( *this ) );
 }
 
 template<typename T>
@@ -309,15 +316,15 @@ void SurfaceT<T>::init( ImageSourceRef imageSource, const SurfaceConstraints &co
 	
 	T *data = new T[height * rowBytes];
 
-	mObj = shared_ptr<Obj>( new Obj( width, height, channelOrder, data, true, rowBytes ) );
+	mObj = std::shared_ptr<Obj>( new Obj( width, height, channelOrder, data, true, rowBytes ) );
 	mObj->mIsPremultiplied = imageSource->isPremultiplied();
 	
-	shared_ptr<ImageTargetSurface<T> > target = ImageTargetSurface<T>::createRef( this );
+	std::shared_ptr<ImageTargetSurface<T> > target = ImageTargetSurface<T>::createRef( this );
 	imageSource->load( target );
 	
 	// if the image doesn't have alpha but we do, set ourselves to be full alpha
 	if( hasAlpha && ( ! imageSource->hasAlpha() ) ) {
-		ip::fill( getChannelAlpha(), CHANTRAIT<T>::max() );
+		ip::fill( &getChannelAlpha(), CHANTRAIT<T>::max() );
 	}	
 }
 
@@ -510,4 +517,4 @@ void* ImageTargetSurface<T>::getRowPointer( int32_t row )
 
 BOOST_PP_SEQ_FOR_EACH( SURFACE_PROTOTYPES, ~, CHANNEL_TYPES )
 
-} // namespace dt
+} // namespace cinder
