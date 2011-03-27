@@ -25,6 +25,7 @@
  */
 
 #include "cinder/app/AppBasic.h"
+#include "cinder/CinderMath.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -42,6 +43,7 @@ class OSCListenerApp : public AppBasic {
 	
 	osc::Listener listener;
 	float positionX;
+    float data[640];
 };
 
 void OSCListenerApp::prepareSettings(Settings *settings){
@@ -51,6 +53,9 @@ void OSCListenerApp::prepareSettings(Settings *settings){
 
 void OSCListenerApp::setup(){
 	listener.setup(3000);
+    
+    for(int i = 0; i < 640; i++)
+        data[i] = .0f;
 }
 
 void OSCListenerApp::update(){
@@ -58,12 +63,12 @@ void OSCListenerApp::update(){
 		osc::Message message;
 		listener.getNextMessage(&message);
 		
-		console() << "New message received" << std::endl;
-		console() << "Address: " << message.getAddress() << std::endl;
+		//console() << "New message received" << std::endl;
+		//console() << "Address: " << message.getAddress() << std::endl;
 		console() << "Num Arg: " << message.getNumArgs() << std::endl;
 		for (int i = 0; i < message.getNumArgs(); i++) {
-			console() << "-- Argument " << i << std::endl;
-			console() << "---- type: " << message.getArgTypeName(i) << std::endl;
+		//	console() << "-- Argument " << i << std::endl;
+			//console() << "---- type: " << message.getArgTypeName(i) << std::endl;
 			if (message.getArgType(i) == osc::TYPE_INT32){
 				try {
 					console() << "------ value: "<< message.getArgAsInt32(i) << std::endl;
@@ -74,10 +79,16 @@ void OSCListenerApp::update(){
 				
 			}else if (message.getArgType(i) == osc::TYPE_FLOAT){
 				try {
-					console() << "------ value: " << message.getArgAsFloat(i) << std::endl;
+					//console() << "------ value: " << message.getArgAsFloat(i) << std::endl;
+                   // for(int i = 0; i < 639; i++)
+                   // {
+                   //     data[i] = data[i+1];
+                        
+                   // }
+                    data[i] = message.getArgAsFloat(i);
 				}
 				catch (...) {
-					console() << "Exception reading argument as float" << std::endl;
+					//console() << "Exception reading argument as float" << std::endl;
 				}
 				
 				positionX = message.getArgAsFloat(0);
@@ -99,7 +110,13 @@ void OSCListenerApp::draw()
 {
 	gl::clear(Color(0,0,0), true);
 	gl::color(Color(1, 1, 1));
-	gl::drawSolidRect(Rectf(Vec2f(0, 0), Vec2f(positionX * getWindowWidth(), getWindowHeight())));
+    
+    glBegin(GL_LINE_STRIP);
+    
+        for(int i = 0; i < 640; i++)
+            glVertex2f(i*2, 300.0f - math<float>::log(data[i])*10.0f);
+    
+    glEnd();
 }
 
 
